@@ -19,7 +19,6 @@ from Action import Action
 class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
-
 		self.rowDim = rowDimension
 		self.colDim = colDimension
 		self.boxes = self.rowDim * self.colDim
@@ -41,64 +40,94 @@ class MyAI( AI ):
 		for i in range(rowDimension):
 			for j in range(colDimension):
 				self.uncovered.add((i,j))
+		self.covered = set()
+		self.covered.add((startX, startY))
 		self.mines = set()
 		self.actions = []
-
+		self.actionsLoc = []
+		self.previousX = startX +1
+		self.previousY = startY +1
+		self.count = 0
 
 		
 	def getAction(self, number: int) -> "Action Object":
-
+		self.count += 1
+		print("test count")
+		print(self.count)
 
 		# while len(self.actions) != 0:
 		# 	return self.actions.pop(0)
-		
 		if len(self.mines) == self.totalMines:
 			return Action(AI.Action.LEAVE)
 
+		if self.board[self.previousX][self.previousY] == None:
+				self.board[self.previousX][self.previousX] = number
+				#self.uncovered.remove((self.previousX,self.previousX))
+				self.covered.add((self.previousX, self.previousX))
+
+		if number == 0:
+			print(self.previousX, self.previousY)
+			print("test prev xy")
+			neighbors = self.getneighbors(self.previousX,self.previousY)
+			for neighbor in neighbors:
+					self.actionsLoc.append((neighbor[0], neighbor[1]))
+					self.actions.append(Action(AI.Action.UNCOVER, neighbor[0]-1, neighbor[1]-1))
+
+		print("check queue")
+		print(self.actionsLoc)
+		prevLoc = self.actionsLoc.pop(0)
+		self.previousX = prevLoc[0]
+		self.previousY = prevLoc[1]
+		return self.actions.pop(0)
+	
 		
-		print("DEBUG")
-		for x, y in self.uncovered:
-			#if spot is a mine, go next
-			if (x,y) in self.mines:
-				continue
+		# print("DEBUG")
+		# for x, y in self.uncovered:
+		# 	#if spot is a mine, go next
+		# 	if (x,y) in self.mines:
+		# 		continue
 			
-			neighbors = self.getneighbors(x,y)
-			print(neighbors)
-			bombs = 0
-			for i, j in neighbors:
-				if (i,j) in self.mines:
-					bombs += 1
+		# 	neighbors = self.getneighbors(x,y)
+		# 	print(neighbors)
+		# 	bombs = 0
+		# 	for i, j in neighbors:
+		# 		if (i,j) in self.mines:
+		# 			bombs += 1
 			
-			if self.board[x][y] == None:
-				self.board[x][y] = number
-				self.uncovered.remove((x,y))
-				return Action(AI.Action.UNCOVER, x, y)
-				self.actions.append(Action(AI.Action.UNCOVER))
+		# 	if self.board[x][y] == None:
+		# 		self.board[x][y] = number
+		# 		self.uncovered.remove((x,y))
+		# 		return Action(AI.Action.UNCOVER, x, y)
+		# 		self.actions.append(Action(AI.Action.UNCOVER))
 
-			elif self.board[x][y] > 0 and self.board[x][y] == bombs:
-				for i, j in neighbors:
-					if self.board[i][j] == None:
-						self.board[i][j] == number
-						self.uncovered.remove((i,j))
-						return Action(AI.Action.UNCOVER, i, j)
-						#self.actions.append(Action(AI.Action.UNCOVER))
+		# 	elif self.board[x][y] > 0 and self.board[x][y] == bombs:
+		# 		for i, j in neighbors:
+		# 			if self.board[i][j] == None:
+		# 				self.board[i][j] == number
+		# 				self.uncovered.remove((i,j))
+		# 				return Action(AI.Action.UNCOVER, i, j)
+		# 				#self.actions.append(Action(AI.Action.UNCOVER))
 
-			elif len(self.mines) < self.totalMines:
-				self.flag_cell(x,y)
-				return Action(AI.Action.FLAG, x, y)					
+		# 	elif len(self.mines) < self.totalMines:
+		# 		self.flag_cell(x,y)
+		# 		return Action(AI.Action.FLAG, x, y)					
 
-		# get neighbors
-		# for every valid neighbor, uncover it
-		return Action(AI.Action.LEAVE)
+		# # get neighbors
+		# # for every valid neighbor, uncover it
+		# return Action(AI.Action.LEAVE)
 		
 
-	def getneighbors(self, i, j):
+	def getneighbors(self, x, z):
+		print("check neighbors")
+		print(x,z)
 		neighbors = set()
-		for k in range(i-1, i+2):
-			for l in range(j-1, j+2):
+		for k in range(x-1, x+2):
+			for l in range(z-1, z+2):
 				if k!=0 and k <= self.colDim and l != 0 and l <= self.rowDim:
-					if (i, j) != (k, l):
-						neighbors.add(tuple((k,l)))
+					if (x, z) != (k, l):
+						if (k, l) not in self.covered:
+							neighbors.add(tuple((k,l)))
+		print(neighbors)
 		return neighbors
 
 		
