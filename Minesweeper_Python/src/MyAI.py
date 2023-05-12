@@ -26,7 +26,7 @@ class MyAI( AI ):
 		self.totalMines = totalMines
 		self.startX = startX
 		self.startY = startY
-
+		
 		self.board = []
 		for i in range(self.rowDim):
 			row = []
@@ -37,27 +37,71 @@ class MyAI( AI ):
 		self.mines = set()
 		self.safe = set()
 		self.uncovered = set()
-		self.flagged = set()
+		self.mines = set()
+		self.actions = []
 
 
 		
 	def getAction(self, number: int) -> "Action Object":
-		if number == 0:
-			pass
 
-		if len(self.mines) == self.totalMines:
-			return Action(Action.LEAVE)
-		if len(self.board) == self.boxes:
-			return Action(Action.LEAVE)
+
+		while len(self.actions) != 0:
+			return self.actions.pop(0)
 		
+		if len(self.mines) == self.totalMines:
+			return Action(AI.Action.LEAVE)
+		if len(self.board) == self.boxes:
+			return Action(AI.Action.LEAVE)
+		
+		for x, y in self.board:
+			#if spot is a mine, go next
+			if (x,y) in self.mines:
+				continue
+			
+			neighbors = self.getneighbors(x,y)
+			print(neighbors)
+			bombs = 0
+			for i, j in neighbors:
+				if (i,j) in self.mines:
+					bombs += 1
+			
+
+			if self.board[x][y] == None:
+				return Action(AI.Action.UNCOVER, x, y)
+				#self.actions.append(Action(AI.Action.UNCOVER))
+
+			elif self.board[x][y] > 0 and self.board[x][y] == bombs:
+				for i, j in neighbors:
+					if self.board[i][j] == None:
+						return Action(AI.Action.UNCOVER, i, j)
+						#self.actions.append(Action(AI.Action.UNCOVER))
+
+			elif len(self.mines) < self.totalMines:
+				self.flag_cell(x,y)
+				return Action(AI.Action.FLAG, x, y)					
+
+		# get neighbors
+		# for every valid neighbor, uncover it
+		return Action(AI.Action.LEAVE)
 		
 
 	def getneighbors(self, i, j):
-		pass
+		neighbors = set()
+		for k in range(i-1, i+2):
+			for l in range(j-1, j+2):
+				if k!=0 and k <= self.columnDim and l != 0 and l <= self.rowDim:
+					if (i, j) != (k, l):
+						neighbors.add(tuple((k,l)))
+		return neighbors
+
+		
 
 	def update_board(self, x, y, val):
 		pass
 
 	def flag_cell(self, x, y):
-		pass
+		self.mines.add((x,y))
+		#self.actions.append(Action(Ai.Action.FLAG))
+		
+		
 			
