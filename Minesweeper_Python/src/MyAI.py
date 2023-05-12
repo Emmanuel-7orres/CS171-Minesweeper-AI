@@ -34,9 +34,13 @@ class MyAI( AI ):
 				row.append(None)
 			self.board.append(row)
 
+
 		self.mines = set()
 		self.safe = set()
 		self.uncovered = set()
+		for i in range(rowDimension):
+			for j in range(colDimension):
+				self.uncovered.add((i,j))
 		self.mines = set()
 		self.actions = []
 
@@ -45,15 +49,15 @@ class MyAI( AI ):
 	def getAction(self, number: int) -> "Action Object":
 
 
-		while len(self.actions) != 0:
-			return self.actions.pop(0)
+		# while len(self.actions) != 0:
+		# 	return self.actions.pop(0)
 		
 		if len(self.mines) == self.totalMines:
 			return Action(AI.Action.LEAVE)
-		if len(self.board) == self.boxes:
-			return Action(AI.Action.LEAVE)
+
 		
-		for x, y in self.board:
+		print("DEBUG")
+		for x, y in self.uncovered:
 			#if spot is a mine, go next
 			if (x,y) in self.mines:
 				continue
@@ -65,14 +69,17 @@ class MyAI( AI ):
 				if (i,j) in self.mines:
 					bombs += 1
 			
-
 			if self.board[x][y] == None:
+				self.board[x][y] = number
+				self.uncovered.remove((x,y))
 				return Action(AI.Action.UNCOVER, x, y)
-				#self.actions.append(Action(AI.Action.UNCOVER))
+				self.actions.append(Action(AI.Action.UNCOVER))
 
 			elif self.board[x][y] > 0 and self.board[x][y] == bombs:
 				for i, j in neighbors:
 					if self.board[i][j] == None:
+						self.board[i][j] == number
+						self.uncovered.remove((i,j))
 						return Action(AI.Action.UNCOVER, i, j)
 						#self.actions.append(Action(AI.Action.UNCOVER))
 
@@ -89,7 +96,7 @@ class MyAI( AI ):
 		neighbors = set()
 		for k in range(i-1, i+2):
 			for l in range(j-1, j+2):
-				if k!=0 and k <= self.columnDim and l != 0 and l <= self.rowDim:
+				if k!=0 and k <= self.colDim and l != 0 and l <= self.rowDim:
 					if (i, j) != (k, l):
 						neighbors.add(tuple((k,l)))
 		return neighbors
