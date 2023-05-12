@@ -41,7 +41,6 @@ class MyAI( AI ):
 			for j in range(colDimension):
 				self.uncovered.add((i,j))
 		self.covered = set()
-		self.covered.add((startX, startY))
 		self.mines = set()
 		self.actions = []
 		self.actionsLoc = []
@@ -51,34 +50,40 @@ class MyAI( AI ):
 
 		
 	def getAction(self, number: int) -> "Action Object":
-		self.count += 1
-		print("test count")
-		print(self.count)
+		# self.count += 1
+		# print("test count")
+		# print(self.count)
 
 		# while len(self.actions) != 0:
 		# 	return self.actions.pop(0)
 		if len(self.mines) == self.totalMines:
 			return Action(AI.Action.LEAVE)
 
-		if self.board[self.previousX][self.previousY] == None:
-				self.board[self.previousX][self.previousX] = number
-				#self.uncovered.remove((self.previousX,self.previousX))
-				self.covered.add((self.previousX, self.previousX))
+		self.board[self.previousX-1][self.previousY-1] = number
+		#self.uncovered.remove((self.previousX,self.previousX))
+		self.covered.add((self.previousX, self.previousY))
+		#print("check covered")
+		#print(self.covered)
 
 		if number == 0:
-			print(self.previousX, self.previousY)
-			print("test prev xy")
+			#print(self.previousX, self.previousY)
+			#print("test prev xy")
 			neighbors = self.getneighbors(self.previousX,self.previousY)
 			for neighbor in neighbors:
 					self.actionsLoc.append((neighbor[0], neighbor[1]))
 					self.actions.append(Action(AI.Action.UNCOVER, neighbor[0]-1, neighbor[1]-1))
+
 
 		print("check queue")
 		print(self.actionsLoc)
 		prevLoc = self.actionsLoc.pop(0)
 		self.previousX = prevLoc[0]
 		self.previousY = prevLoc[1]
-		return self.actions.pop(0)
+		if len(self.actions) > 0:
+			return self.actions.pop(0)
+		else:
+			pass
+			#logic to check for next best move
 	
 		
 		# print("DEBUG")
@@ -118,14 +123,12 @@ class MyAI( AI ):
 		
 
 	def getneighbors(self, x, z):
-		print("check neighbors")
-		print(x,z)
 		neighbors = set()
 		for k in range(x-1, x+2):
 			for l in range(z-1, z+2):
 				if k!=0 and k <= self.colDim and l != 0 and l <= self.rowDim:
 					if (x, z) != (k, l):
-						if (k, l) not in self.covered:
+						if (k, l) not in self.covered and (k, l) not in self.actionsLoc:
 							neighbors.add(tuple((k,l)))
 		print(neighbors)
 		return neighbors
