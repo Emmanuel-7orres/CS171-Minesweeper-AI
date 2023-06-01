@@ -1,120 +1,131 @@
-# ==============================CS-199==================================
-# FILE:			MyAI.py
-#
-# AUTHOR: 		Justin Chung
-#
-# DESCRIPTION:	This file contains the MyAI class. You will implement your
-#				agent in this file. You will write the 'getAction' function,
-#				the constructor, and any additional helper functions.
-#
-# NOTES: 		- MyAI inherits from the abstract AI class in AI.py.
-#
-#				- DO NOT MAKE CHANGES TO THIS FILE.
-# ==============================CS-199==================================
-
+from collections import deque
 from AI import AI
 from Action import Action
-class MyAI( AI ):
-	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
-		self.rowDim = rowDimension
-		self.colDim = colDimension
-		self.totalMines = totalMines
-		self.startX = startX
-		self.startY = startY
-		self.actions = []
-		self.neighbors = []
-		self.uncovered = set()
-		self.board = [[-1 for j in range(self.colDim)] for i in range(self.rowDim)]
-		self.mines = set()
-		self.start = True	
 
-	def getAction(self, number: int) -> "Action Object":
-		while len(self.actions) != 0:
-			neighbor = self.neighbors.pop(0)
-			if (neighbor[0], neighbor[1]) in self.mines:
-				self.uncovered.add((neighbor[0], neighbor[1]))
-			else:
-				self.uncovered.add((neighbor[0], neighbor[1]))
-				self.board[neighbor[0]][neighbor[1]] = number
-			return self.actions.pop(0)
-		
-		if len(self.mines) == self.totalMines:
-			return Action(AI.Action.LEAVE)
-		
-		if self.start == True:
-			self.start = False
-			self.uncovered.add((self.startX,self.startY))
-			self.board[self.startX][self.startY] = number
+class MyAI(AI):
+    def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
+        self.rowDim = rowDimension
+        self.colDim = colDimension
+        self.totalMines = totalMines
+        self.startX = startX
+        self.startY = startY
+        self.actions = deque()
+        self.neighbors = deque()
+        self.uncovered = set()
+        self.board = [[-2] * self.colDim for _ in range(self.rowDim)]
+        self.mines = set()
+        self.start = True
 
-			if number == 0:
-				for i,j in self.get_neighbors(self.startX, self.startY):
-					self.actions.append(Action(AI.Action.UNCOVER, i, j))
-					self.neighbors.append((i,j))
-			return self.actions.pop(0)
-		else:
+    def getAction(self, number: int) -> "Action Object":
+        if len(self.mines) == self.totalMines:
+            #print("ALL MINES FOUND, UNCOVERING BOARD\n")
+            for i in range(self.colDim):
+                for j in range(self.rowDim):
+                    if self.board[i][j] == -2 and (i,j) not in self.mines:
+                        self.actions.append(Action(AI.Action.UNCOVER, i, j))
+            self.actions.append(Action(AI.Action.LEAVE))
+            return self.actions.popleft()
 
-			neighbor = self.neighbors.pop(0)
-			#print("Tile Uncovered (Index): ", neighbor)
-			self.uncovered.add((neighbor[0], neighbor[1]))
-			self.board[neighbor[0]][neighbor[1]] = number
+        if (self.colDim * self.rowDim) - len(self.uncovered) == self.totalMines - len(self.mines):
+            #print("ALL TILES ARE MINES, FLAGGING ALL AND LEAVING\n")
+            for i in range(self.colDim):
+                for j in range(self.rowDim):
+                    if self.board[i][j] == -2:
+                        self.actions.append(Action(AI.Action.FLAG, i, j))
+            self.actions.append(Action(AI.Action.LEAVE))
+            return self.actions.popleft()
 
-			for i,j in self.uncovered:
-				if self.board[i][j] == 0:
-					for t,k in self.get_neighbors(i, j):
-						self.actions.append(Action(AI.Action.UNCOVER, t, k))
-						self.neighbors.append((t,k))
-			
+        while self.actions:
+            neighbor = self.neighbors.popleft()
+            self.uncovered.add((neighbor[0], neighbor[1]))
+            self.board[neighbor[0]][neighbor[1]] = number
+            return self.actions.popleft()
 
-				elif self.board[i][j] != "B" and self.board[i][j] > 0:
-					uncovered_neighbors = [(t,k) for t,k in self.get_neighbors(i, j) if self.board[t][k] == -1]
-					flagged_neighbors = [(t,k) for t,k in self.get_neighbors(i, j) if self.board[t][k] == "B"]
+        if self.start:
+            self.start = False
+            self.uncovered.add((self.startX, self.startY))
+            self.board[self.startX][self.startY] = number
 
-					if len(uncovered_neighbors) == self.board[i][j] - len(flagged_neighbors):
-						for t,k in uncovered_neighbors:
-							self.actions.append(Action(AI.Action.FLAG, t, k))
-							self.neighbors.append((t,k))
-							self.board[t][k] = "B"
-							self.mines.add((t,k))
-					elif self.board[i][j] == len(flagged_neighbors):
-						for t,k in uncovered_neighbors:
-							self.actions.append(Action(AI.Action.UNCOVER, t, k))
-							self.neighbors.append((t,k))
-							
-			for i ,j in self.uncovered:
-				count = 0
-				if self.board[i][j] != "B" and self.board[i][j] > 0:
-					neighbors = set()
-					for k in range(i-1, i+2):
-						for t in range(j-1, j+2):
-							if k >= 0 and k < self.rowDim and t >= 0 and t < self.colDim:
-								if (k, t) != (i, j):
-									neighbors.add((k, t))
+            if number == 0:
+                for i, j in self.get_neighbors(self.startX, self.startY):
+                    self.actions.append(Action(AI.Action.UNCOVER, i, j))
+                    self.neighbors.append((i, j))
+            return self.actions.popleft()
 
-					for neighbor in neighbors:
-						if neighbor in self.mines and self.board[neighbor[0]][neighbor[1]] != -1:
-							count += 1
-					if count == self.board[i][j]:
-						for neighbor in neighbors:
-							if neighbor not in self.uncovered:
-								self.actions.append(Action(AI.Action.UNCOVER, i, j))
-								self.neighbors.append((i,j))
-				else:
-					continue
-			return self.actions.pop(0)
-		
-		return Action(AI.Action.LEAVE)
-		
-	def get_neighbors(self, x, y):
-		neighbors = set()
-		for i in range(x-1, x+2):
-			for j in range(y-1, y+2):
-				if i >= 0 and i < self.rowDim and j >= 0 and j < self.colDim:
-					if (x, y) != (i, j) and (i, j) not in self.uncovered:
-						neighbors.add((i, j))
-		#print("Neighbors of (index)", (x,y), " : ", neighbors)
-		return neighbors
-	
-	def printBoard(self):
-		for arr in self.board:
-			print(arr)
-	
+        else:
+            neighbor = self.neighbors.popleft()
+            self.uncovered.add((neighbor[0], neighbor[1]))
+            self.board[neighbor[0]][neighbor[1]] = number
+
+            for i, j in self.uncovered:
+                neighbors = self.get_neighbors(i, j)
+                if self.board[i][j] == 0 and len(neighbors) != 0:
+                    for t, k in neighbors:
+                        if self.board[t][k] == -2:
+                            self.actions.append(Action(AI.Action.UNCOVER, t, k))
+                            self.neighbors.append((t, k))
+                            return self.actions.popleft()
+
+                if self.board[i][j] > 0 and len(neighbors) != 0:
+                    covered_neighbors = []
+                    flagged_neighbors = []
+                    for t, k in self.get_all_neighbors(i, j):
+                        if self.board[t][k] == -2:  # covered tile
+                            covered_neighbors.append((t, k))
+                        elif self.board[t][k] == -1:  # mine
+                            flagged_neighbors.append((t, k))
+
+                    if self.board[i][j] == len(flagged_neighbors):
+                        for t, k in covered_neighbors:
+                            self.actions.append(Action(AI.Action.UNCOVER, t, k))
+                            self.neighbors.append((t, k))
+                            return self.actions.popleft()
+
+                    elif len(covered_neighbors) == self.board[i][j] - len(flagged_neighbors):
+                        for t, k in covered_neighbors:
+                            self.actions.append(Action(AI.Action.FLAG, t, k))
+                            self.neighbors.append((t, k))
+                            self.mines.add((t, k))
+                            return self.actions.popleft()
+
+            #print("Choosing Random Tile\n")
+            min_chance = float('inf')
+            min_chance_tile = None
+
+            covered = [(i, j) for i in range(self.rowDim) for j in range(self.colDim) if self.board[i][j] == -2]
+
+            for tile in covered:
+                chance = self.calculate_chance(tile)
+                if chance < min_chance:
+                    min_chance = chance
+                    min_chance_tile = tile
+            self.actions.append(Action(AI.Action.UNCOVER, min_chance_tile[0], min_chance_tile[1]))
+            self.neighbors.append((min_chance_tile[0], min_chance_tile[1]))
+            return self.actions.popleft()
+
+        return Action(AI.Action.LEAVE)
+
+    def get_neighbors(self, x, y):
+        neighbors = []
+        for i in range(x - 1, x + 2):
+            for j in range(y - 1, y + 2):
+                if 0 <= i < self.rowDim and 0 <= j < self.colDim and (x, y) != (i, j) and (i, j) not in self.uncovered:
+                    neighbors.append((i, j))
+        return neighbors
+
+    def get_all_neighbors(self, x, y):
+        neighbors = []
+        for k in range(x - 1, x + 2):
+            for t in range(y - 1, y + 2):
+                if 0 <= k < self.rowDim and 0 <= t < self.colDim and (k, t) != (x, y):
+                    neighbors.append((k, t))
+        return neighbors
+
+    def calculate_chance(self, tile):
+        neighbors = self.get_all_neighbors(tile[0], tile[1])
+        flagged_neighbors = sum(2 for neighbor in neighbors if neighbor in self.mines)
+        uncovered_neighbors = sum(1 for neighbor in neighbors if neighbor in self.uncovered and neighbor not in self.mines)
+        if not neighbors:
+            return 100
+        likelihood = flagged_neighbors + uncovered_neighbors
+        return likelihood
