@@ -12,11 +12,12 @@ class MyAI(AI):
         self.actions = deque()
         self.neighbors = deque()
         self.uncovered = set()
-        self.board = [[-2] * self.colDim for _ in range(self.rowDim)]
+        self.board = [[-2] * self.rowDim for _ in range(self.colDim)]
         self.mines = set()
         self.start = True
 
     def getAction(self, number: int) -> "Action Object":
+        #checks if total mines is same as found mines
         if len(self.mines) == self.totalMines:
             #print("ALL MINES FOUND, UNCOVERING BOARD\n")
             for i in range(self.colDim):
@@ -26,6 +27,7 @@ class MyAI(AI):
             self.actions.append(Action(AI.Action.LEAVE))
             return self.actions.popleft()
 
+        #checks if total mines is same as found mines
         if (self.colDim * self.rowDim) - len(self.uncovered) == self.totalMines - len(self.mines):
             #print("ALL TILES ARE MINES, FLAGGING ALL AND LEAVING\n")
             for i in range(self.colDim):
@@ -35,12 +37,14 @@ class MyAI(AI):
             self.actions.append(Action(AI.Action.LEAVE))
             return self.actions.popleft()
 
+        #goes through every single item in queue
         while self.actions:
             neighbor = self.neighbors.popleft()
             self.uncovered.add((neighbor[0], neighbor[1]))
             self.board[neighbor[0]][neighbor[1]] = number
             return self.actions.popleft()
-
+        
+        #is set for the starting move
         if self.start:
             self.start = False
             self.uncovered.add((self.startX, self.startY))
@@ -56,9 +60,10 @@ class MyAI(AI):
             neighbor = self.neighbors.popleft()
             self.uncovered.add((neighbor[0], neighbor[1]))
             self.board[neighbor[0]][neighbor[1]] = number
-
+            #goes through every uncovered tile
             for i, j in self.uncovered:
                 neighbors = self.get_neighbors(i, j)
+                #checks if there is more neighbors
                 if self.board[i][j] == 0 and len(neighbors) != 0:
                     for t, k in neighbors:
                         if self.board[t][k] == -2:
@@ -91,9 +96,8 @@ class MyAI(AI):
             #print("Choosing Random Tile\n")
             min_chance = float('inf')
             min_chance_tile = None
-
-            covered = [(i, j) for i in range(self.rowDim) for j in range(self.colDim) if self.board[i][j] == -2]
-
+            #print("")
+            covered = [(i, j) for i in range(self.colDim) for j in range(self.rowDim) if self.board[i][j] == -2]
             for tile in covered:
                 chance = self.calculate_chance(tile)
                 if chance < min_chance:
@@ -109,7 +113,7 @@ class MyAI(AI):
         neighbors = []
         for i in range(x - 1, x + 2):
             for j in range(y - 1, y + 2):
-                if 0 <= i < self.rowDim and 0 <= j < self.colDim and (x, y) != (i, j) and (i, j) not in self.uncovered:
+                if 0 <= i < self.colDim and 0 <= j < self.rowDim and (x, y) != (i, j) and (i, j) not in self.uncovered:
                     neighbors.append((i, j))
         return neighbors
 
@@ -117,7 +121,7 @@ class MyAI(AI):
         neighbors = []
         for k in range(x - 1, x + 2):
             for t in range(y - 1, y + 2):
-                if 0 <= k < self.rowDim and 0 <= t < self.colDim and (k, t) != (x, y):
+                if 0 <= k < self.colDim and 0 <= t < self.rowDim and (k, t) != (x, y):
                     neighbors.append((k, t))
         return neighbors
 
